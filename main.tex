@@ -1,0 +1,334 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%2345678901234567890123456789012345678901234567890123456789012345678901234567890
+%        1         2         3         4         5         6         7         8
+
+\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out
+                                                          % if you need a4paper
+%\documentclass[a4paper, 10pt, conference]{ieeeconf}      % Use this line for a4
+                                                          % paper
+
+\IEEEoverridecommandlockouts                              % This command is only
+                                                          % needed if you want to
+                                                          % use the \thanks command
+\overrideIEEEmargins
+% See the \addtolength command later in the file to balance the column lengths
+% on the last page of the document
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+% ref packages
+%\usepackage{nameref}
+%\usepackage{varioref}
+% \usepackage{hyperref}
+\usepackage[hyphens,spaces,obeyspaces]{url} % Fixes long URLs
+\usepackage{hyperref} % Let URLs be clickable and lead to the website
+
+% \usepackage{enumitem} % Let enumerations start with the alphabet
+\usepackage{graphicx}
+\usepackage{floatrow}
+\usepackage{float}
+\usepackage{aliascnt}
+\usepackage{multirow} % Tables
+\usepackage{array}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\usepackage{authblk} % For the author section 
+%Mathebib
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+\usepackage[
+style=ieee, % Zitierstil
+isbn=false,
+doi=false,
+url=false,
+pagetracker=true,
+%autocite=inline,  % regelt Aussehen für \autocite (inline=\parancite)
+block=space,               
+backref=false,
+backrefstyle=three+,
+date=year,
+backend=biber
+]{biblatex}
+\addbibresource{literature.bib}
+\renewcommand*{\bibfont}{\small}
+
+% The following packages can be found on http:\\www.ctan.org
+%\usepackage{graphics} % for pdf, bitmapped graphics files
+%\usepackage{epsfig} % for postscript graphics files
+%\usepackage{mathptmx} % assumes new font selection scheme installed
+%\usepackage{mathptmx} % assumes new font selection scheme installed
+%\usepackage{amsmath} % assumes amsmath package installed
+%\usepackage{amssymb}  % assumes amsmath package installed
+
+\title{\LARGE \bf
+Current Trends in Games: Upsampling algorithms
+}
+
+\author{Tobias Brandner}
+
+\affil{Julius-Maximilians University \\
+        Würzburg, Germany \\
+        tobias.brandner@stud-mail.uni-wuerzburg.de}
+
+%\author{Huibert Kwakernaak$^{1}$ and Pradeep Misra$^{2}$% <-this % stops a space
+%\thanks{*This work was not supported by any organization}% <-this % stops a space
+%\thanks{$^{1}$H. Kwakernaak is with Faculty of Electrical Engineering, Mathematics and Computer Science,
+    %    University of Twente, 7500 AE Enschede, The Netherlands
+     %   {\tt\small h.kwakernaak at papercept.net}}%
+%\thanks{$^{2}$P. Misra is with the Department of Electrical Engineering, Wright State University,
+      %  Dayton, OH 45435, USA
+       % {\tt\small p.misra at ieee.org}}%
+%}
+
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+\BiblatexSplitbibDefernumbersWarningOff
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+
+sth with upsampling algos...
+
+\end{abstract}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+
+As games become more sophisticated and incorporate features such as ray tracing, a method of calculating illumination by tracking virtual photons, 
+which are reflected and scattered by surfaces \cite{ray_tracing}, the need for image upsampling technologies, such as Deep Learning Super Sampling (DLSS) \cite{dlss} and FidelityFX Super Resolution (FSR) \cite{fsr}, 
+is increasing. \\
+The game Cyperpunk \cite{Cyperpunk}, for example, recently received an experimental feature in cooperation with Nvidia\footnote{\url{https://www.nvidia.com/de-de/}} 
+called Ray Tracing: Overdrive \cite{ray_tracing_overdrive}, a path tracer adding all light sources in the scene to calculate the lighting for the current rendered frame \cite{Shirley2020RTW1}.
+The calculation for this type of ray tracing is so demanding that an RTX 4090, 
+one of the most powerful General Processing Units (GPU) \cite{4k_gpu_bench}, renders the game at only 18 frames per second (fps) at average and 4k resolution. 
+This compares to an average of 48 fps without ray tracing. With DLSS 2, this increases to an average of 59 fps, and with NVidia's latest upsampling technology DLSS 3, even an average of 95 fps is achieved \cite{digital_foundry_ray}. 
+A frame rate that makes the game enjoyable for many players. \\
+On the other hand, upsampling technologies can also be used to support weaker hardware in form of older GPUs or mobile hardware, such as Integrated GPUs (IGPU), Accelerated Processing Units (APU) or smartphone GPUs \cite{dong2022rendersr}.
+The Legend of Zelda: Tears of the Kingdom \cite{ZeldaTotK}, for example, is rendered natively in 720p resolution on the Nintendo Switch\footnote{\url{https://www.nintendo.com/switch/}} when played in handheld mode, 
+but when docked to the station it is rendered in btw. 720p and 900p at 30 fps and further upscaled with FSR 1.0 to reach 1080p or Full High Defintion (FHD) \cite{digital_foundry_zelda_fsr}. \\
+The following section \ref{Sec:RelatedWork} explains the core ideas behind traditional and machine upsampling techniques.
+Section \ref{Sec:Current} examines the current state of the art of upsampling technologies used in games.
+Section \ref{Sec:Evaluation} evaluates these upsampling technologies against some benchmarks, including recent game titles and their respective image quality.
+Finally, section \ref{Sec:ConcFuture} summarizes the results and explores future trends.
+
+\section{Background}
+\label{Sec:RelatedWork}
+Image Upsampling/Upscaling is the process of of creating a high resolution (HR) image from a low resolution (LR) image.
+This section explains some of the most common ideas, as seen in \ref{fig:upsampling_methods}, when it comes to upsampling \cite{wang2022interpolation}\cite{wang2020deep}.
+Starting with traditional linear interpolation methods to cutting edge deep learning approaches. 
+
+\begin{figure}[!ht]
+        \caption{Hierachically-structured taxonomy of this paper.
+        There are different approaches when it comes to image upsampling. 
+        Starting with the traditional interpolation methods, e.g the linear Bicubic interpolation. 
+        Then proceeding with the macine learning methods, consisting of supervised and unsupervised network models.}
+        \centering
+        \includegraphics[width=0.7\textwidth]{images/interpol.jpg}
+        \label{fig:upsampling_methods}
+    \end{figure}
+
+\subsection{Traditional Interpolation}
+\label{subsec:traditional}
+Interpolation is the method of constructing new data points within the range of a discrete set of known data points.
+In the context of images, this means that we need to "guess" the color information of the newly created pixels \cite{image_interpolation_def}.
+One example: If we have an LR image of 720p (1280x720) and we want to double the resolution to 1440p (2560x1440), 
+we need to create a new pixel for each pixel of our input image and interpolate their color values.
+
+\subsubsection{Linear Interpolation}
+
+Nearest neighbor interpolation is one of the simplest and fastest interpolation algorithms, but it provides poor image quality. 
+The idea is that each interpolated pixel gets the same color value as its nearest neighbor \cite{nearest_n}.
+Bi-linear interpolation, as the name suggests, goes one step further and interpolates in two directions. 
+Thus, the color values of the 4 nearest neighbors are taken and their average is output \cite{bilinear}.
+Bicubic interpolation is the most common and computationally intensive linear method we discuss. 
+It takes a 4x4 grid of neighboring pixels, the entire neighborhood so to speak, and weights them based on their distance (closer pixel values are weighted higher) \cite{bicubic}. 
+Resulting in better image quality overall, except for some edge cases (pun intended).
+
+\subsubsection{Nonlinear Interpolation}
+
+Linear interpolation methods work well for upsampling pixel areas, but fail at edges, resulting in blurring.
+For these cases, nonlinear interpolation methods such as unsharp masking can be used. Unsharp masking creates an out-of-focus version of the original image and subtracts it from the original, creating an image that contains only the edges.
+This image can then be used to resharpen the edges of the upsampled image \cite{deng2010generalized}.
+Another method is Laplacian sharpening, which uses the Laplacian operator to highlight areas of rapid intensity change, and then reapplies it to the image, again resulting in sharper edges \cite{wang2022interpolation}.\\
+
+Of course, linear and nonlinear interpolation methods can be combined to obtain a high quality sampled image.
+
+\begin{figure}[!ht]
+        \caption{When upsampling an image from a low-resolution image, edges are detected to determine which type of interpolation method to use.
+                If an edge is detected, a nonlinear interpolation method is used to sharpen the edge of the generated high-resolution image. 
+                Otherwise, a linear interpolation method is used to fill areas in the generated image.}
+        \centering
+        \includegraphics[width=0.6\textwidth]{images/edgedet.jpg}
+        \label{fig:edge_det}
+    \end{figure}
+
+\subsection{Deep Learning Upsampling}
+
+%Supervised models (LR images and corresponding HR images for training) vs Unsupervised \\
+Image Super Resolution (SR) is a special form of image upsampling where more complex and advanced algorithms, e.g. deep neural network models, are used to generate an HR image from an LR image. 
+In general, each neural network processes an input, in our case an LR image, with multiple layers (the more layers, the deeper the network) and produces an output, in our case an HR image.
+The input, i.e., the image, is first converted into a tensor, a multidimensional array consisting of numbers representing the color values of each pixel. 
+The layers then perform various mathematical operations based on their own parameters, i.e., weights, to learn features, i.e., to detect pixel corresponding to edges.
+The output of the network produces a loss that shows how well the network performed its task. 
+This loss is then backprobagated to the various layers to update their parameters and adjust their weights to hopefully produce a better/more accurate output.
+This process is repeated many times and is called training of the network \cite{goodfellow2016deep}.
+After the network is trained, it can be used to generate HR images.\\
+Since this is a very complex topic and there are many different neural network architectures, we will focus on some key architectures.
+
+\subsubsection{A supervised method}
+Supervised neural networks are networks whose input and output are carefully prepared and labeled, 
+i.e., each LR image that is fed into the network has a corresponding HR image against which the output of the network can be compared.
+%CNN erklären
+The most common supervised neural network is the Covolution Neural Network.
+It uses convolutional layers to extract features from training data. 
+Convolutional layers perform a mathematical operation called convolution, which multiplies two higher-dimensional arrays to compute a new value (effectively downsampling our image).
+The inverse of this operation, deconvolution or transposed convolution, can be used to sample the image back up.
+\textcite{Gao2020PixelTC} has shown that their network PixelTCL can effectively overcome checkerboard artifacts, resulting in better spatial features such as edges and shapes.
+\\
+% GAN erklären
+Another model is the Generative Adversial Network (GAN), which consists of two main components: a generator and a discriminator.
+Both are trained simultaneously: 
+The generator has the task of generating an image that the discriminator takes as a real image.
+The discriminator receives a mixture of real and fake images from the generator, and its task is to discriminate between them.
+GAN models have proven to be very successful when it comes to generating HR images \cite{Sharma2020HighresolutionID}.
+% ResNet erklären
+
+\subsubsection{A Unsupervised method}
+% UNet erkläten
+
+\begin{figure}[!ht]
+    \caption{An example of a UNet network architecture. 
+    The input gets downsampled with intermediate steps and then again upsampled, forming a U-like structure.}
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/U-NetExample.png}
+    \label{fig:unet}
+\end{figure}
+The U-Net architecture can be used for both supervised and unsupervised training. 
+In this architecture, first the input is downsampled and then later upsampled with intermediate steps, creating a U-like structure, as seen in \ref{fig:unet}.
+The unique feature of this network architecture is that each upsampling step is influenced not only by the previous step, but also by the same layer, so that more unique features can be learned \cite{Sharma2022ADL}.
+
+\subsection{Anti-aliasing}
+
+Anti-aliasing is a technique for eliminating the aliasing effect. 
+Aliasing describes the appearance of stair-stepped lines or jagged edges in a rasterized image (image rendered with pixels), as seen in \ref{fig:antiAliasing}.
+Aliasing typically occurs when displaying HR images on a lower resolution system, for example when smooth and continuous curves are rasterized \cite{antialiasing_def}.
+
+\begin{figure}[!ht]
+        \caption{An example of anti-aliasing, at the top of the image, and an example of aliasing, at the bottom of the image.}
+        \centering
+        \includegraphics[width=0.4\textwidth]{images/antialiasing.jpg}
+        \label{fig:antiAliasing}
+    \end{figure}
+
+The idea behind anti-aliasing is very similar to upsampling methods, only their use case differs, as interpolation is applied from LR images to HR images, while anti-aliasing is applied from HR images to LR images.
+Anti-aliasing is usually needed for a large screen size with a relatively low screen resolution.\\
+An example would be Super Sampling Anti-Aliasing (SSAA), which renders and downsamples the image at a higher resolution to produce a clearer and sharper image. 
+Or Multi-Sample Anti-Aliasing (MSAA), which takes multiple samples per pixel during the rendering process. 
+Instead of rendering a single color for each pixel, MSAA calculates the average color value based on the samples within the pixel range. 
+By averaging multiple samples, MSAA can smooth edges and reduce the jagged appearance.
+But these approaches are quite computationally expensive so using Morphological Anti-Aliasing (MLAA), a rule based pixel blending anti-aliasing method which added blurring to the image, gained a lot of popularity. 
+Born from MLAA was Fast Approximate Anit-Aliasing (FXAA) and Subpixel Methodological Anti-Aliasing (SMAA), which reduce the blur to a minimum, resulting in a overall better and sharper image.
+The last Anti-Aliasing method is Temporal Anti-Aliasing (TXAA), a complex and intensive method that uses a temporal component (frames that were rendered before the current generated image). 
+TXAA helps in smoothing artifacts from rash movement \cite{antialiasing_types} \cite{gu2022super} \cite{stuttgart_boy}.\\
+
+In the context of video games, upsampling and anti-aliasing can and are combined to provide a smooth and good-looking visual experience.
+
+\subsection{Quality Metrics}
+
+Measuring the quality of created images is not a trivial task, as the human eye is very perceptive when it comes to detecting subtle differences that make images realistic or unrealistic.
+The most common objective quality measurement is the peak signal-to-noise ratio (PSNR). 
+It compares two images pixel for pixel by calculating the mean squared error (MSE) between them, summing it, and putting it on a logarithmic scale, resulting in a comparable value.
+Because PSNR only considers the MSE at the pixel level, i.e., the differences between the corresponding pixels, and not the visual perception, it is often a poor representation of the overall quality of the reconstruction.
+Structural similarity (SSIM) attempts to compensate for this shortcoming by measuring the structural similarity between two images. 
+This is based on the assumption that the human eye is more sensitive to changes in image structures.
+SSIM measures luminance, contrast, and structure independently by estimating luminance and contrast as the mean and image intensity as the standard deviation.
+They are combined in pixel windows and summed to calculate a final metric value. \\
+Both objective metrics may not indicate good overall image quality. Therefore, a subjective metric, such as Mean Opinion Score (MOS), may also be considered.
+MOS allows test subjects to rate actual image quality, usually by assigning a simple score from 1 (poor) to 5 (good).
+The MOS score is calculated by taking the average of all the scores. 
+Obviously, the MOS score is inferior to the objective scores when it comes to comparability, but can always serve as a good basis when objective measures provide varying results \cite{wang2020deep} \cite{Soufi2022BenchmarkOD}.
+
+
+\section{Current Upsampling Technologies}
+\label{Sec:Current}
+\subsection{FSR}
+\subsection{DLSS}
+\subsection{XeSS}
+\subsection{TSR}
+
+\section{Evaluation}
+\label{Sec:Evaluation}
+\subsection{Benchmarks}
+\subsection{Image Quality}
+
+\section{Conclusion \& Future Work}
+\label{Sec:ConcFuture}
+
+
+% \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
+                                  % on the last page of the document manually. It shortens
+                                  % the textheight of the last page by a suitable amount.
+                                  % This command does not take effect until the next page
+                                  % so it should come on the page before the last. Make
+                                  % sure that you do not shorten the textheight too much.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\printbibliography[
+title={Papers},
+notkeyword=game, notkeyword=online
+]
+
+\printbibliography[
+title={Online},
+keyword=online
+]
+
+\printbibliography[
+title={Ludography},
+keyword=game
+]
+%\printbibliography
+
+% \begin{thebibliography}{99}
+
+% \bibitem{c1} G. O. Young, ``Synthetic structure of industrial plastics (Book style with paper title and editor),'' 	in Plastics, 2nd ed. vol. 3, J. Peters, Ed.  New York: McGraw-Hill, 1964, pp. 15--64.
+% \bibitem{c2} W.-K. Chen, Linear Networks and Systems (Book style).	Belmont, CA: Wadsworth, 1993, pp. 123--135.
+% \bibitem{c3} H. Poor, An Introduction to Signal Detection and Estimation.   New York: Springer-Verlag, 1985, ch. 4.
+% \bibitem{c4} B. Smith, ``An approach to graphs of linear forms (Unpublished work style),'' unpublished.
+% \bibitem{c5} E. H. Miller, ``A note on reflector arrays (Periodical styleÑAccepted for publication),'' IEEE Trans. Antennas Propagat., to be publised.
+% \bibitem{c6} J. Wang, ``Fundamentals of erbium-doped fiber amplifiers arrays (Periodical styleÑSubmitted for publication),'' IEEE J. Quantum Electron., submitted for publication.
+% \bibitem{c7} C. J. Kaufman, Rocky Mountain Research Lab., Boulder, CO, private communication, May 1995.
+% \bibitem{c8} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ``Electron spectroscopy studies on magneto-optical media and plastic substrate interfaces(Translation Journals style),'' IEEE Transl. J. Magn.Jpn., vol. 2, Aug. 1987, pp. 740--741 [Dig. 9th Annu. Conf. Magnetics Japan, 1982, p. 301].
+% \bibitem{c9} M. Young, The Techincal Writers Handbook.  Mill Valley, CA: University Science, 1989.
+% \bibitem{c10} J. U. Duncombe, ``Infrared navigationÑPart I: An assessment of feasibility (Periodical style),'' IEEE Trans. Electron Devices, vol. ED-11, pp. 34--39, Jan. 1959.
+% \bibitem{c11} S. Chen, B. Mulgrew, and P. M. Grant, ``A clustering technique for digital communications channel equalization using radial basis function networks,'' IEEE Trans. Neural Networks, vol. 4, pp. 570--578, July 1993.
+% \bibitem{c12} R. W. Lucky, ``Automatic equalization for digital communication,'' Bell Syst. Tech. J., vol. 44, no. 4, pp. 547--588, Apr. 1965.
+% \bibitem{c13} S. P. Bingulac, ``On the compatibility of adaptive controllers (Published Conference Proceedings style),'' in Proc. 4th Annu. Allerton Conf. Circuits and Systems Theory, New York, 1994, pp. 8--16.
+% \bibitem{c14} G. R. Faulhaber, ``Design of service systems with priority reservation,'' in Conf. Rec. 1995 IEEE Int. Conf. Communications, pp. 3--8.
+% \bibitem{c15} W. D. Doyle, ``Magnetization reversal in films with biaxial anisotropy,'' in 1987 Proc. INTERMAG Conf., pp. 2.2-1--2.2-6.
+% \bibitem{c16} G. W. Juette and L. E. Zeffanella, ``Radio noise currents n short sections on bundle conductors (Presented Conference Paper style),'' presented at the IEEE Summer power Meeting, Dallas, TX, June 22--27, 1990, Paper 90 SM 690-0 PWRS.
+% \bibitem{c17} J. G. Kreifeldt, ``An analysis of surface-detected EMG as an amplitude-modulated noise,'' presented at the 1989 Int. Conf. Medicine and Biological Engineering, Chicago, IL.
+% \bibitem{c18} J. Williams, ``Narrow-band analyzer (Thesis or Dissertation style),'' Ph.D. dissertation, Dept. Elect. Eng., Harvard Univ., Cambridge, MA, 1993. 
+% \bibitem{c19} N. Kawasaki, ``Parametric study of thermal and chemical nonequilibrium nozzle flow,'' M.S. thesis, Dept. Electron. Eng., Osaka Univ., Osaka, Japan, 1993.
+% \bibitem{c20} J. P. Wilkinson, ``Nonlinear resonant circuit devices (Patent style),'' U.S. Patent 3 624 12, July 16, 1990. 
+
+% \end{thebibliography}
+
+
+
+
+\end{document}
