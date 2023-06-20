@@ -32,6 +32,7 @@
 \usepackage{array}
 \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
 \usepackage{authblk} % For the author section 
+\usepackage{caption} % advanced captions
 %Mathebib
 \RequirePackage{amsmath}
 \RequirePackage{amssymb}
@@ -256,6 +257,45 @@ The MOS score is inferior to the objective scores when it comes to comparability
 
 \section{Current Upsampling Technologies}
 \label{Sec:Current}
+
+Up until now we only dealt with the basics behind upsampling techniques, which mostly focused on a static context (meaning we did not care how long our algorithm took to produce the HR image).
+We will now focus on the state of the art upsampling technologies used in modern games. Therefore these algorithms need to upsample our image in a realtime context, e.g. upsample a frame 60 times a second.
+In particular we explore FSR from AMD, DLSS from Nvidia, 
+Xe Super Sampling (XeSS) \cite{XeSS_intro} from Intel\footnote{\url{https://www.intel.com/content/www/us/en/homepage.html}} 
+and Temporal Super Resolution (TSR) \cite{TSR_intro} from Epic Games\footnote{\url{https://www.epicgames.com/site/en-US/home/}} (which is exclusively used in Unreal Engine\footnote{\url{https://www.unrealengine.com/en-US/}}).
+All of these technologies typically use 4 different quality modes to upscale the LR image, as seen in table \ref{tab:qualityModes}.
+\begin{table*}[ht]
+    \centering
+    \caption{FSR, DLSS, and XeSS have different quality modes which can be set. Typically, these upsampling modes include:
+        a) A very high setting (achieving the best image quality with a scaling factor of 1.3).
+        b) A high setting (achieving good overall image quality with a scaling factor of 1.5).
+        c) A medium setting (achieving mixed image quality with a scaling factor of 1.7).
+        d) A low setting (achieving mediocre image quality with a scaling factor of 2.0).
+    The lower the scaling factor, the more computationally intensive the upscaling becomes!}
+    \label{tab:qualityModes}
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    \textbf{Quality Mode} & \textbf{Scale Factor} & \textbf{Input Resolution} & \textbf{Output Resolution} \\
+    \hline
+    Very High   & 1.3x                          & 1477 x 831  & 1920 x 1080\footnote{FHD} \\
+                & (77\% screen resolution)      & 1970 x 1108 & 2560 x 1440\footnote{WQHD} \\
+                &                               & 2954 x 1662 & 3840 x 2160\footnote{4k} \\
+    \hline
+    High        & 1.5x                          & 1280 x 720  & 1920 x 1080 \\
+                & (67\% screen resolution)      & 1706 x 960  & 2560 x 1440 \\
+                &                               & 2560 x 1440 & 3840 x 2160 \\
+    \hline
+    Medium      & 1.7x                          & 1129 x 635  & 1920 x 1080 \\
+                & (59\% screen resolution)      & 1506 x 847  & 2560 x 1440 \\
+                &                               & 2259 x 1270 & 3840 x 2160 \\
+    \hline
+    Low         & 2.0x                          & 960 x 540   & 1920 x 1080 \\
+                & (50\% screen resolution)      & 1280 x 720  & 2560 x 1440 \\
+                &                               & 1920 x 1080 & 3840 x 2160 \\
+    \hline
+    \end{tabular}
+\end{table*}
+
 \subsection{FSR}
 \subsection{DLSS}
 \subsection{XeSS}
