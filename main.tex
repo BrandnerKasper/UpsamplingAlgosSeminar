@@ -258,28 +258,22 @@ The MOS score is inferior to the objective scores when it comes to comparability
 \section{Current Upsampling Technologies}
 \label{Sec:Current}
 
-Up until now we only dealt with the basics behind upsampling techniques, which mostly focused on a static context (meaning we did not care how long our algorithm took to produce the HR image).
-We will now focus on the state of the art upsampling technologies used in modern games. Therefore these algorithms need to upsample our image in a realtime context, e.g. upsample a frame 60 times a second.
-In particular we explore FSR from AMD, DLSS from Nvidia, 
-Xe Super Sampling (XeSS) \cite{XeSS_intro} from Intel\footnote{\url{https://www.intel.com/content/www/us/en/homepage.html}} 
-and Temporal Super Resolution (TSR) \cite{TSR_intro} from Epic Games\footnote{\url{https://www.epicgames.com/site/en-US/home/}} (which is exclusively used in Unreal Engine\footnote{\url{https://www.unrealengine.com/en-US/}}).
-All of these technologies typically use 4 different quality modes to upscale the LR image, as seen in table \ref{tab:qualityModes}.
 \begin{table*}[ht]
     \centering
-    \caption{FSR, DLSS, and XeSS have different quality modes which can be set. Typically, these upsampling modes include:
-        a) A very high setting (achieving the best image quality with a scaling factor of 1.3).
-        b) A high setting (achieving good overall image quality with a scaling factor of 1.5).
-        c) A medium setting (achieving mixed image quality with a scaling factor of 1.7).
-        d) A low setting (achieving mediocre image quality with a scaling factor of 2.0).
-    The lower the scaling factor, the more computationally intensive the upscaling becomes!}
+    \caption{FSR, DLSS, and XeSS have different quality modes that can be set. These upsampling modes usually include:
+        a) A very high setting (best image quality with a scaling factor of 1.3).
+        b) A high setting (good overall image quality with a scaling factor of 1.5).
+        c) A medium setting (mixed image quality with a scaling factor of 1.7).
+        d) A low setting (mediocre image quality with a scaling factor of 2.0).
+    The lower the scaling factor, the more computationally intensive upscaling becomes!}
     \label{tab:qualityModes}
     \begin{tabular}{|c|c|c|c|}
     \hline
     \textbf{Quality Mode} & \textbf{Scale Factor} & \textbf{Input Resolution} & \textbf{Output Resolution} \\
     \hline
-    Very High   & 1.3x                          & 1477 x 831  & 1920 x 1080\footnote{FHD} \\
-                & (77\% screen resolution)      & 1970 x 1108 & 2560 x 1440\footnote{WQHD} \\
-                &                               & 2954 x 1662 & 3840 x 2160\footnote{4k} \\
+    Very High   & 1.3x                          & 1477 x 831  & 1920 x 1080 (FHD) \\
+                & (77\% screen resolution)      & 1970 x 1108 & 2560 x 1440 (WQHD) \\
+                &                               & 2954 x 1662 & 3840 x 2160 (4k) \\
     \hline
     High        & 1.5x                          & 1280 x 720  & 1920 x 1080 \\
                 & (67\% screen resolution)      & 1706 x 960  & 2560 x 1440 \\
@@ -296,10 +290,57 @@ All of these technologies typically use 4 different quality modes to upscale the
     \end{tabular}
 \end{table*}
 
-\subsection{FSR}
-\subsection{DLSS}
-\subsection{XeSS}
-\subsection{TSR}
+So far, we have only dealt with the basics of upsampling techniques, which mostly focused on a static context (we did not care about how long it takes our algorithm to generate the HR image).
+We will now focus on the latest upsampling technologies used in modern games. Therefore, these algorithms need to upsample our image in a real-time context, e.g. upsample an image 60 times per second.
+In particular, we study FSR from AMD and DLSS from Nvidia, 
+Xe Super Sampling (XeSS) \cite{XeSS_intro} from Intel\footnote{\url{https://www.intel.com/content/www/us/en/homepage.html}} 
+and Temporal Super Resolution (TSR) \cite{TSR_intro} from Epic Games\footnote{\url{https://www.epicgames.com/site/en-US/home/}} (which is used exclusively in the Unreal Engine\footnote{\url{https://www.unrealengine.com/en-US/}}). \\
+All of these technologies typically use 4 different quality modes to upscale the LR image, as seen in table \ref{tab:qualityModes}. 
+For example, the very high quality mode uses a factor of 1.3 to scale the input resolution from 2954 x 1662 to 3840 x 2160 (here only 77\% of the output resolution is actually rendered by the game).
+Higher scaling factors result in worse image quality, but increase the performance rate of the respective upsampling algorithm.
+All quality modes target output resolutions of FHD (1080p), WQHD (1440p), and 4k (2160p).
+To include an upsampling technology inside the render process of a game engine, like Unreal or Unity\footnote{\url{https://unity.com/}}, 
+the upsampling pass needs to be applied after the anti-aliasing, but before rendering post processing effects, especially those that add noise like film grain, and HUD elements, as seen in image \ref{fig:renderpass}.
+
+\begin{figure}[!ht]
+    \caption{To include an upsampling technique in the render pass of a game engine, 
+    it should be used after anti-aliasing the image, but before rendering post process effects, 
+    like film grain or chromatic abberation, and the HUD elements.}
+    \centering
+    \includegraphics[width=0.3\textwidth]{images/renderpass.jpg}
+    \label{fig:renderpass}
+\end{figure}
+
+\subsection{FidelityFX Super Resolution (FSR)}
+
+FSR is AMD's open source, cross platform (runs on all brands of GPUs) upsampling technology. It was first introduced as FSR 1.0 in June 2021.
+FSR 1.0\footnote{\url{https://github.com/GPUOpen-Effects/FidelityFX-FSR}} only relies on traditional interpolation methods. In particular it uses two passes: 
+\begin{enumerate}
+    \item An upscaling pass called Edge-Adaptive Spatial Upsampling (EASU) that interpolates and analyses the input frame to detect gradient reverseals (essentially looking at how strongly neighboring pixel values differ). 
+    \item A sharpening pass called Robust Contrast-Adaptive Sharpening (RCAS) to reapply the detected edges into the upsampled image. 
+\end{enumerate}
+
+For FSR 1.0 to work well, it needs anti-aliasing (in form of TAA or MSAA) as well as a negative Multum In Parvo (latin for many things in a small space) (MIP) mapping bias.
+MIP maps are precomputed versions of textures at different resolutions, they are used to improve rendering performance and reduce visual artifacts, like aliasing, by chosing the appropriate level of detail (LOD) of a texture for a given pixel \cite{MIP_map}.
+The game engine automatically selects the MIP mapping. With a bias we can change the LOD of the texture. While a positive bias leads to a lower LOD and makes the texture appear blurry, a negative bias leads to a higher LOD and makes the texture sharper \cite{MIP_mapBias}.
+Different MIP biases are chosen depending on the quality level (-0.3 for very high to -1.0 for low).
+As mentioned before, FSR needs to perform the upsampling in real time and therefore it is important to know how long the upsampling process takes.
+Depending on the target resolution and GPU, upsampling takes less than 1 millisecond (ms) (4k with a 3080 takes 0.4 ms, with a 2060S it takes 1.0 ms).
+For comparison, at a refresh rate of 60 fps, an image takes 16.6 ms to render. Therefore, the performance overhead of <=1ms is acceptable with FSR \cite{fsr1.0}.
+(Note: Often games are GPU-limited rather than CPU-limited, meaning that the game's frame rate depends primarily on how long it takes the game to render a frame (GPU limit) rather than how long it takes the game to compute a step in its logic (CPU limit).
+Since upsampling techniques reduce the performance cost to the GPU, the performance overhead of the upsampling process when rendering the game at a lower resolution is far less than the overhead when rendering the game at a higher resolution, which means a dramatic improvement in our frame rate!)\\
+FSR 2.x\footnote{\url{https://github.com/GPUOpen-Effects/FidelityFX-FSR2}} is AMD's latest upsampling technology and was released in May 2022.
+It builds on FSR 1.0 and uses a temporal algorithm similar to TAA. The idea is to use motion vectors that describe how a game object moved from the previous frame to the current one.
+This history data can then be used to increase the accuracy of the interpolated pixels by calculating where each pixel in the previous frame moved to.
+In cases where the history data no longer correlates with the new input frame, temporal ghosting (a visual artifact best seen in fast-moving objects that trace themselves) occurs. 
+Since FSR 2.x already uses something similar to TAA, an anti-aliasing image as input is not strictly necessary (the MIP bias remains the same).
+Therefore, it is more computational demanding, which leads to a doubling of the performance overhead (4k with a RX 6800XT takes 1.1ms) \cite{fsr2.x}.\\
+FSR 1.0 is integrated with Godot \cite{fsr1_godot} and Unity \cite{fsr1_unity}. While Unreal supports it through a plugin \cite{fsr1_unreal}.
+At the moment only Unreal supports FSR 2.x via a plugin \cite{fsr2.x_unreal}.
+
+\subsection{Deep Learning Super Sampling (DLSS)}
+\subsection{Xe Super Sampling (XeSS)}
+\subsection{Temporal Super Resolution (TSR)}
 
 \section{Evaluation}
 \label{Sec:Evaluation}
