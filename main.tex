@@ -198,21 +198,28 @@ Both are trained simultaneously:
 The generator has the task of generating an image that the discriminator takes as input.
 The discriminator receives a mixture of real and fake images from the generator, and its task is to discriminate between them.
 GAN models have proven to be very successful when it comes to generating HR images \cite{Sharma2020HighresolutionID}.
-% ResNet erklären
+
 
 \subsubsection{A Unsupervised method}
 % UNet erkläten
 % Figure größer machen -> maybe think about making it go over both columns
-\begin{figure}[!ht]
+\begin{figure*}[!ht]
     \caption{An example of a UNet network architecture. 
     The input gets downsampled with intermediate steps and then again upsampled, forming a U-like structure.}
     \centering
-    \includegraphics[width=1.0\textwidth]{images/U-NetExample.png}
+    \includegraphics[width=0.8\textwidth]{images/U-NetExample.png}
     \label{fig:unet}
-\end{figure}
+\end{figure*}
 The U-Net architecture can be used for both supervised and unsupervised training. 
 In this architecture, first the input is downsampled and then later upsampled with intermediate steps, creating a U-like structure, as seen in figure \ref{fig:unet}.
-The unique feature of this network architecture is that each upsampling step is influenced not only by the previous step, but also by the same layer, so that more unique features can be learned \cite{Sharma2022ADL}.
+The unique feature of this network architecture is that each upsampling step is influenced not only by the previous step, but also by the same layer, so that more unique features can be learned \cite{Sharma2022ADL}. \\
+The Convolutional Auto-Encoder is another unsupervised method. 
+An autoencoder is a type of neural network that aims to learn a compressed representation or encoding of the input data.
+It consists of an encoder network that maps the input image to a lower dimensional representation, 
+a bottleneck layer that helps compress the extracted features into a smaller vector representation, 
+and a decoder that gradually converts the compressed image into an upsampled image.
+In the case of a convolutional autoencoder, the encoder and decoder networks consist of convolutional layers instead of fully connected layers \cite{conv_autoE}.
+Convolutional autoencoders have proven effective in capturing spatial information and extracting features from images for use in image upsampling \cite{liu2021variational}.
 
 \subsection{Anti-aliasing}
 
@@ -234,9 +241,9 @@ Or Multi-Sample Anti-Aliasing (MSAA), which takes multiple samples per pixel dur
 Instead of rendering a single color for each pixel, MSAA calculates the average color value based on the samples within the pixel range. 
 By averaging multiple samples, MSAA can smooth edges and reduce the jagged appearance.
 But these approaches are quite computationally expensive so using Morphological Anti-Aliasing (MLAA), a rule based pixel blending anti-aliasing method which added blurring to the image, gained a lot of popularity. 
-Born from MLAA was Fast Approximate Anit-Aliasing (FXAA) and Subpixel Methodological Anti-Aliasing (SMAA), which reduce the blur to a minimum, resulting in a overall better and sharper image.
-The last Anti-Aliasing method is Temporal Anti-Aliasing (TXAA), a complex and intensive method that uses a temporal component (frames that were rendered before the current generated image). 
-TXAA helps in smoothing artifacts from rash movement \cite{antialiasing_types} \cite{gu2022super} \cite{stuttgart_boy}.\\
+Born from MLAA was Fast Approximate Anit-Aliasing (FAA) and Subpixel Methodological Anti-Aliasing (SMAA), which reduce the blur to a minimum, resulting in a overall better and sharper image.
+The last Anti-Aliasing method is Temporal Anti-Aliasing (TAA), a complex and intensive method that uses a temporal component (frames that were rendered before the current generated image). 
+TAA helps in smoothing artifacts from rash movement \cite{antialiasing_types} \cite{gu2022super} \cite{stuttgart_boy}.\\
 In the context of video games, upsampling and anti-aliasing are often combined to provide a smooth and good-looking visual experience.
 
 \subsection{Quality Metrics}
@@ -323,12 +330,12 @@ FSR 1.0\footnote{\url{https://github.com/GPUOpen-Effects/FidelityFX-FSR}} only r
 For FSR 1.0 to work well, it needs anti-aliasing (in form of TAA or MSAA) as well as a negative Multum In Parvo (latin for many things in a small space) (MIP) mapping bias.
 MIP maps are precomputed versions of textures at different resolutions, they are used to improve rendering performance and reduce visual artifacts, like aliasing, by chosing the appropriate level of detail (LOD) of a texture for a given pixel \cite{MIP_map}.
 The game engine automatically selects the MIP mapping. With a bias we can change the LOD of the texture. While a positive bias leads to a lower LOD and makes the texture appear blurry, a negative bias leads to a higher LOD and makes the texture sharper \cite{MIP_mapBias}.
-Different MIP biases are chosen depending on the quality level (-0.3 for very high to -1.0 for low).
+In particular for FSR, different MIP biases are chosen depending on the quality level (-0.3 for very high to -1.0 for low).
 As mentioned before, FSR needs to perform the upsampling in real time and therefore it is important to know how long the upsampling process takes.
 Depending on the target resolution and GPU, upsampling takes less than 1 millisecond (ms) (4k with a 3080 takes 0.4 ms, with a 2060S it takes 1.0 ms).
 For comparison, at a refresh rate of 60 fps, an image takes 16.6 ms to render. Therefore, the performance overhead of <=1ms is acceptable with FSR \cite{fsr1.0}.
-(Note: Often games are GPU-limited rather than CPU-limited, meaning that the game's frame rate depends primarily on how long it takes the game to render a frame (GPU limit) rather than how long it takes the game to compute a step in its logic (CPU limit).
-Since upsampling techniques reduce the performance cost to the GPU, the performance overhead of the upsampling process when rendering the game at a lower resolution is far less than the overhead when rendering the game at a higher resolution, which means a dramatic improvement in our frame rate!)\\
+Games can be either GPU-limited or CPU-limited, meaning that the game's frame rate depends either on how long it takes the game to render a frame (GPU limit) or how long it takes the game to compute a step in its logic (CPU limit) \cite{gpu-cpu-limit}.
+Since upsampling techniques reduce the performance cost to the GPU, meaning when the game is GPU limited the performance overhead of the upsampling process when rendering the game at a lower resolution is far less than the overhead when rendering the game at a higher resolution, which results in a dramatic improvement in our frame rate!\\
 FSR 2.x\footnote{\url{https://github.com/GPUOpen-Effects/FidelityFX-FSR2}} is AMD's latest upsampling technology and was released in May 2022.
 It builds on FSR 1.0 and uses a temporal algorithm similar to TAA. The idea is to use motion vectors that describe how a game object moved from the previous frame to the current one.
 This history data can then be used to increase the accuracy of the interpolated pixels by calculating where each pixel in the previous frame moved to.
@@ -339,6 +346,40 @@ FSR 1.0 is integrated with Godot \cite{fsr1_godot} and Unity \cite{fsr1_unity}. 
 At the moment only Unreal supports FSR 2.x via a plugin \cite{fsr2.x_unreal}.
 
 \subsection{Deep Learning Super Sampling (DLSS)}
+
+DLSS is Nvidia's proprietary deep learning upsampling technology that only works on the company's RTX GPUs.
+First introduced in 2018, it uses TAA for the LR image and then feeds it into a convolutional autoencoder network to get an upsampled HR image.
+The network is trained by comparing its output to an even higher resolution image, e.g. the network upscales a 1080p image to 4k and compares it to a 16k base image \cite{dlss_slide_1}.
+The network can then be fine-tuned by optimizing for several losses, such as content loss and style loss.
+The content loss measures the difference between the content of the base image and the up-sampled image.
+It ensures that important content and structural details of the original image are captured.
+Content loss is usually calculated using a distance metric such as MSE.
+Style loss, also known as texture loss, focuses on capturing the style or artistic features of the base image.
+Style is often represented by correlations of different feature vectors in the CNN, which are stored in the Gram matrix.
+Style loss is calculated by comparing the Gram matrices of the feature vectors of the original image and the upscaled image \cite{liu2021variational}.\\
+In 2020, Nvidia further improved DLSS to DLSS 2 by adding information about previous images in the form of motion vectors. 
+This temporal feedback is then fed into the network in addition to the TAA input image to further improve the network's output.
+When integrating DLSS 2, it is recommended to use a MIP mapping bias based on the formula \ref{dlss_mip_bias} \cite{dlss_slide_2}.
+
+\begin{equation}
+    \log_2\left(\frac{\text{{renderWidth}}}{\text{{outputWidth}}}\right) - 1 + \text{{eps}}
+    \label{dlss_mip_bias}
+\end{equation}
+
+A look at the official SDK\footnote{\url{https://github.com/NVIDIA/DLSS}} of DLSS 2 shows that 6 different presets can be selected, which means that there are 6 different configurations for the parameters of the network. \\
+DLSS 3 is Nvidia's latest upsampling technology, introduced in 2022, and only works on Generation 4000 GPUs.
+Building on DLSS 2, DLSS 3 adds optical frame generation that not only allows an LR frame to be upsampled to an HR frame, but also creates an entirely new frame between the upsampled frames.
+The DLSS 3 Convolutional Autoencoder requires four inputs - current and previous frames, an optical flow field, and game engine data such as motion vectors and depths.
+The optical flow field is calculated by analyzing two consecutive frames in the game.
+This makes it possible to track history data not only for game objects, as motion vectors do, but also for pixel-level information such as particles, reflections, shadows, and lighting.
+Because DLSS 3 generates an entire fake frame between real frames (for which no game logic calculations are required), it reduces the performance overhead for the CPU.
+When a game is CPU-limited, this behavior leads to an improvement in our frame rate!
+While the fake frames are displayed, the game does not respond to the player's input.
+This reduces the overall responsiveness of the game.
+(Note: To solve this problem, Nvidia has introduced another technology called Refelex).
+The high-definition rendering pipeline in Unity natively supports DLSS 2 \cite{dlss_unity}.
+Unreal supports both DLSS 2 and DLSS 3 as a plugin \cite{dlss_unreal}.
+
 \subsection{Xe Super Sampling (XeSS)}
 \subsection{Temporal Super Resolution (TSR)}
 
