@@ -91,7 +91,14 @@ Current Trends in Games Technologies: Upsampling algorithms
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
 
-sth with upsampling algos...
+!!! Rewrite
+This paper explores the current trends in games technologies, focusing on upsampling algorithms. 
+With the increasing complexity of games and the demand for computational demanding features like ray tracing, the need for image upsampling technologies has grown. 
+Two prominent methods are Deep Learning Super Sampling (DLSS) and FidelityFX Super Resolution (FSR), which reduce computation costs by rendering the game in a lower resolution and later upsample it to the target resolution. 
+DLSS utilizes machine learning approaches, while FSR employs traditional methods. 
+The paper evaluates these upsampling technologies in terms of their performance and image quality, considering benchmarks and quality metrics such as PSNR, SSIM, and LPIPS. 
+DLSS proves to be the most effective upsampling technology, providing significant performance boosts and stable image quality. 
+Future work includes the development of FSR 3 and advancements in frame generation to improve the quality and performance of upsampling technologies.
 
 \end{abstract}
 
@@ -255,8 +262,9 @@ Because PSNR only considers the MSE at the pixel level, i.e., the differences be
 Structural similarity (SSIM) attempts to compensate for this shortcoming by measuring the structural similarity between two images. 
 This is based on the assumption that the human eye is more sensitive to changes in image structures.
 SSIM measures luminance, contrast, and structure independently by estimating luminance and contrast as the mean and image intensity as the standard deviation.
-They are combined in pixel windows and summed to calculate a final metric value. \\
-Both objective metrics may not indicate good overall image quality. Therefore, a subjective metric, such as Mean Opinion Score (MOS), may also be considered.
+They are combined in pixel windows and summed to calculate a final metric value. 
+Learned Perceptual Image Patch Similarity (LPIPS) is another quality metric, that uses a deep neural network to calculate the similarity between their respective feature representations obtained from the trained network.\\
+Those objective metrics may not indicate good overall image quality. Therefore, a subjective metric, such as Mean Opinion Score (MOS), may also be considered.
 MOS allows test subjects to rate actual image quality, usually by assigning a simple score from 1 (poor) to 5 (good).
 The MOS score is calculated by taking the average of all the scores. 
 The MOS score is inferior to the objective scores when it comes to comparability, but can always serve as a good basis when objective measures provide varying results \cite{wang2020deep} \cite{Soufi2022BenchmarkOD}.
@@ -367,9 +375,9 @@ When integrating DLSS 2, it is recommended to use a MIP mapping bias based on th
 \end{equation}
 
 A look at the official SDK\footnote{\url{https://github.com/NVIDIA/DLSS}} of DLSS 2 shows that 6 different presets can be selected, which means that there are 6 different configurations for the parameters of the network. \\
-DLSS 3 is Nvidia's latest upsampling technology, introduced in 2022, and only works on Generation 4000 GPUs.
+DLSS 3 is Nvidia's latest upsampling technology, introduced in 2022, and only works on their 4000 generation GPUs.
 Building on DLSS 2, DLSS 3 adds optical frame generation that not only allows an LR frame to be upsampled to an HR frame, but also creates an entirely new frame between the upsampled frames.
-The DLSS 3 Convolutional Autoencoder requires four inputs - current and previous frames, an optical flow field, and game engine data such as motion vectors and depths.
+The DLSS 3 convolutional autoencoder requires four inputs - current and previous frames, an optical flow field, and game engine data such as motion vectors and depths.
 The optical flow field is calculated by analyzing two consecutive frames in the game.
 This makes it possible to track history data not only for game objects, as motion vectors do, but also for pixel-level information such as particles, reflections, shadows, and lighting.
 Because DLSS 3 generates an entire fake frame between real frames (for which no game logic calculations are required), it reduces the performance overhead for the CPU.
@@ -381,16 +389,79 @@ The high-definition rendering pipeline in Unity natively supports DLSS 2 \cite{d
 Unreal supports both DLSS 2 and DLSS 3 as a plugin \cite{dlss_unreal}.
 
 \subsection{Xe Super Sampling (XeSS)}
+
+In September 2022, Intel introduced XeSS as its own deep learning upsampling technique.
+The SDK\footnote{\url{https://github.com/intel/xess/tree/main}} to use their network model is open source and works for all GPU brands.
+Unfortunately, at this point we can't say anything about the actual network architecture used.
+According to the official XeSS developer's guide, the model takes as input: the previous and current frames (aliased), the motion vectors and the depth buffer.
+XeSS uses a jitter offset to fight jagged edges, and takes a new subpixel position at each frame to ensure temporal convergence (to fight temporal artifacts such as ghosting or blurring).
+Similar to FSR 2, XeSS performs its own anti-aliasing during upsampling.
+Intel recommends a MIP mapping bias based on an analog formula \ref{dlss_mip_bias} used in DLSS for XeSS.
+It is also recommended to use 1080p and above as input resolution for XeSS to work well.
+At the moment, only Unreal supports XeSS as a plugin \cite{xess_unreal}.
+
 \subsection{Temporal Super Resolution (TSR)}
+
+In December 2020, Epic Games introduced Temporal Anti-Aliasing Upsampling (TAAU) as the first version of an upsampling technique. 
+TAAU replaced TAA in Unreal Engine version 4.26 and combined anti-aliasing and upsampling in one step in the render chain.
+Of course, it can only be used for anti-aliasing purposes if the input resolution is greater than or equal to the output resolution \cite{unreal_all}.
+With the release of Unreal Engine 5.0 in April 2022, Epic Games further improved TAAU to TSR.
+TSR is platform independent and works on GPUs of all brands, but is optimized for Playstation 5 and Xbox Series S/X consoles (the consoles' AMD GPUs).
+Similar to FSR 2, DLSS 2 and XeSS, it uses previous frames and motion vectors to create an accurate upsampled frame. 
+Unfortunately, again, we can't tell you what exact methods TSR uses.
+Both interpolation and deep learning methods seem reasonable here.
+Epic Games recommends using at least 1080p as the input resolution to get good image quality.
+The screen resolution can be set up to 25\%, resulting in a maximum upscaling factor of 4.
+TSR cost can be roughly estimated at 1.5 ms per frame.
+MIP mapping bias is handled automatically by the engine.
+If another upsampling technique (FSR, DLSS, XeSS) is enabled within the engine, TSR simply gets replaced \cite{TSR_intro}.
 
 \section{Evaluation}
 \label{Sec:Evaluation}
+For evaluating the different upsampling technologies, we first focus on their boost in performance and second look into the generated image quality.
+
 \subsection{Benchmarks}
+
+To compare the performance increase of the different upsampling technologies, we use an example benchmark \ref{fig:comparison} of Cyperpunk 2077 in Raytracing Overdrive mode with a 4090.
+The source \cite{bench1}\cite{bench2} for this benchmark used a strong CPU (i9 13900k and Ryzen 7700X), so the game is GPU-limited with this configuration. 
+Besides the average fps, we also compare the 1\% lows of the game. 
+1\% lows occur when the game is under a lot of pressure, i.e. when many objects and particle effects have to be rendered.
+This makes it a good benchmark variable to capture microstutters that can be annoying for players.
+\begin{figure}[!ht]
+    \caption{Comparing the fps btw. the different upsampling technologies in their quality mode and Native 4k/WQHD in Cyperpunk 2077 with a RTX 4090.}
+    \centering
+    \includegraphics[width=1.0\textwidth]{images/comparison.png}
+    \label{fig:comparison}
+\end{figure}
+The benchmark compares the average and 1\% lows when rendering the game in native 4k and WQHD with the upsampling technologies.
+All upsampling technologies use the quality mode, i.e. the input resolution is WQHD and the output resolution is 4k.
+DLSS 2 and FSR 2 have a slight advantage over XeSS and TSR. Still, all upsampling technologies increase fps significantly. 
+(Since TSR is a pure Unreal upsampling method, another source \cite{bench3} comparing DLSS, FSR and TSR in Ghostwire Tokyo \cite{Ghostwire} was used. 
+For completeness, TSR performance was also estimated for this benchmark).
+DLSS 2, in particular, comes precariously close to the performance of the game's native rendering at the input resolution.
+DLSS 3's frame generation results in another significant increase in fps, even compared to rendering the game in WQHD (about 60\%)!
+This makes it the undisputed number one upsampling technology when it comes to increasing performance.
+
 \subsection{Image Quality}
+
+None of the four upsampling methods published an objective metric score for PSNR, SSIM, or LPIPS.
+Looking at similar approaches as FSR \cite{wang2022interpolation} and DLSS \cite{liu2021variational}, we find that interpolation methods have a higher PSNR and SSIM value (a higher pixel-based accuracy),
+but a lower LPIPS value (a lower human perception of image quality) compared to deep learning methods.
+A look at an image quality comparison source (\cite{bench4}) shows that TSR and FSR have more problems with pixel flicker when rendering very fine geometries such as plants or grids, while DLSS provides the most stable image across multiple frames.
+In general, lowering the quality modes for all upsampling technologies results in more visual artifacts, such as ghosting.
 
 \section{Conclusion \& Future Work}
 \label{Sec:ConcFuture}
 
+Upsampling technologies can be based on either interpolation (FSR) or deep learning (DLSS).
+Regardless of the method used, upsampling technologies have proven to increase game performance by rendering the game at a lower resolution (lifting GPU limits) or/and creating a frame between real frames (lifting CPU limits).
+The freed up power can be used for new features, e.g. more accurate ray tracing, help older GPUs/CPUs to be usable longer or just to save energy.
+At the moment, DLSS is proving to be the best upsampling technology in terms of performance and image quality.
+Since the other upsampling technologies are newer, we can expect this gap to close in the future.
+Amd has already announced that they are working on FSR 3, a competitor to DLSS 3 and frame generation \cite{fsr3}.
+Right now, all vendors of upsampling technologies recommend an input resolution of at least 1080p to achieve acceptable image quality.
+A rather high resolution for weak hardware, e.g. cell phones, to render.
+In the future, it is expected that acceptable image quality can also be achieved with lower resolutions.
 
 % \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
                                   % on the last page of the document manually. It shortens
