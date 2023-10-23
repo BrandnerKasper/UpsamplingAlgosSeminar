@@ -91,15 +91,13 @@ Current Trends in Games Technologies: Upsampling algorithms
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
 
-!!! Rewrite
-This paper explores the current trends in games technologies, focusing on upsampling algorithms. 
-With the increasing complexity of games and the demand for computational demanding features like ray tracing, the need for image upsampling technologies has grown. 
-Two prominent methods are Deep Learning Super Sampling (DLSS) and FidelityFX Super Resolution (FSR), which reduce computation costs by rendering the game in a lower resolution and later upsample it to the target resolution. 
-DLSS utilizes machine learning approaches, while FSR employs traditional methods. 
+With the increasing complexity of games and the cost for computational demanding features like ray tracing, the need for image upsampling technologies has grown. 
+Four prominent methods are Deep Learning Super Sampling (DLSS), FidelityFX Super Resolution (FSR), Xe Super Sampling (XeSS) and Temporal Super Resolution (TSR), which reduce computation costs by rendering the game in a lower resolution and later upsample it to the target resolution. 
+DLSS and XeSS utilizes machine learning approaches, while FSR employs traditional methods. 
 The paper evaluates these upsampling technologies in terms of their performance and image quality, considering benchmarks and quality metrics such as PSNR, SSIM, and LPIPS. 
 DLSS proves to be the most effective upsampling technology, providing significant performance boosts and stable image quality. 
-Future work includes the development of FSR 3 and advancements in frame generation to improve the quality and performance of upsampling technologies.
-
+Recent developments include DLSS 3 and FSR 3, which generate entire frames between real images, dramatically increasing frame rate but introducing input lag.
+As well as DLSS 3.5 - ray reconstruction, which further improves image quality for reflections, and AMD's Fluid Motion Frame (AFMF), which enables driver-level frame generation.
 \end{abstract}
 
 
@@ -162,8 +160,9 @@ Resulting in better image quality overall, except for some edge cases (pun inten
 \subsubsection{Nonlinear Interpolation}
 
 Linear interpolation methods work well for upsampling pixel areas, but fail at edges, resulting in blurring.
-For these cases, nonlinear interpolation methods such as unsharp masking can be used. Unsharp masking creates an out-of-focus version of the original image and subtracts it from the original, creating an image that contains only the edges.
-This image can then be used to resharpen the edges of the upsampled image \cite{deng2010generalized}.
+For these cases, nonlinear interpolation methods such as unsharp masking can be used. 
+Unsharp masking creates a blurred version of the original image and subtracts it from the original, creating an image mask that contains only the edges.
+This mask can then be used to resharpen the upsampled image, by selectively increasing the contrast along the edges \cite{deng2010generalized} \cite{unmask}.
 Another method is Laplacian sharpening, which uses the Laplacian operator to highlight areas of rapid intensity change (edges), and then reapplies it to the image, again resulting in sharper edges \cite{wang2022interpolation}.\\
 Linear and nonlinear interpolation methods can be combined, as seen in figure \ref{fig:edge_det}, by detecting when to use a no-/linear method to obtain a high quality sampled image.
 
@@ -350,6 +349,9 @@ This history data can then be used to increase the accuracy of the interpolated 
 In cases where the history data no longer correlates with the new input frame, temporal ghosting (a visual artifact best seen in fast-moving objects that trace themselves) occurs. 
 Since FSR 2.x already uses something similar to TAA, an anti-aliasing image as input is not strictly necessary (the MIP bias remains the same).
 Therefore, it is more computational demanding, which leads to a doubling of the performance overhead (4k with a RX 6800XT takes 1.1ms) \cite{fsr2.x}.\\
+
+!!!! ADD FSR 3!!!
+
 FSR 1.0 is integrated with Godot \cite{fsr1_godot} and Unity \cite{fsr1_unity}. While Unreal supports it through a plugin \cite{fsr1_unreal}.
 At the moment only Unreal supports FSR 2.x via a plugin \cite{fsr2.x_unreal}.
 
@@ -385,6 +387,9 @@ When a game is CPU-limited, this behavior leads to an improvement in our frame r
 While the fake frames are displayed, the game does not respond to the player's input.
 This reduces the overall responsiveness of the game.
 (Note: To solve this problem, Nvidia has introduced another technology called Refelex).
+
+!!!Add DLSS 3.5 !!!
+
 The high-definition rendering pipeline in Unity natively supports DLSS 2 \cite{dlss_unity}.
 Unreal supports both DLSS 2 and DLSS 3 as a plugin \cite{dlss_unreal}.
 
@@ -434,13 +439,12 @@ This makes it a good benchmark variable to capture microstutters that can be ann
     \label{fig:comparison}
 \end{figure}
 The benchmark compares the average and 1\% lows when rendering the game in native 4k and WQHD with the upsampling technologies.
-All upsampling technologies use the quality mode, i.e. the input resolution is WQHD and the output resolution is 4k.
+All upsampling technologies use the high quality mode, i.e. the input resolution is WQHD and the output resolution is 4k.
 DLSS 2 and FSR 2 have a slight advantage over XeSS and TSR. Still, all upsampling technologies increase fps significantly. 
-(Since TSR is a pure Unreal upsampling method, another source \cite{bench3} comparing DLSS, FSR and TSR in Ghostwire Tokyo \cite{Ghostwire} was used. 
-For completeness, TSR performance was also estimated for this benchmark).
+(Since TSR is a pure Unreal upsampling method, another source \cite{bench3} comparing DLSS, FSR and TSR in Ghostwire Tokyo \cite{Ghostwire} was used to estimate TSR performance for this benchmark).
 DLSS 2, in particular, comes precariously close to the performance of the game's native rendering at the input resolution.
 DLSS 3's frame generation results in another significant increase in fps, even compared to rendering the game in WQHD (about 60\%)!
-This makes it the undisputed number one upsampling technology when it comes to increasing performance.
+This makes it the undisputed number one upsampling technology when it comes to increasing raw frame rate.
 
 \subsection{Image Quality}
 
@@ -463,6 +467,8 @@ Right now, all vendors of upsampling technologies recommend an input resolution 
 A rather high resolution for weak hardware, e.g. cell phones, to render.
 In the future, it is expected that acceptable image quality can also be achieved with lower resolutions.
 
+!!! FSR 3 is already here! FSR for ray tracing? AMD fluid motion frames == driver based frame generation might be a nice thing in the future, What will DLSS do next? focus more on ray tracing? Mobile might be a hard seller in next time!
+
 % \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
                                   % on the last page of the document manually. It shortens
                                   % the textheight of the last page by a suitable amount.
@@ -480,7 +486,6 @@ In the future, it is expected that acceptable image quality can also be achieved
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
 \printbibliography[
 title={Papers},
 notkeyword=game, notkeyword=online
@@ -495,6 +500,7 @@ keyword=online
 title={Ludography},
 keyword=game
 ]
+
 %\printbibliography
 
 % \begin{thebibliography}{99}
