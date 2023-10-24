@@ -92,12 +92,13 @@ Current Trends in Games Technologies: Upsampling algorithms
 \begin{abstract}
 
 With the increasing complexity of games and the cost for computational demanding features like ray tracing, the need for image upsampling technologies has grown. 
-Four prominent methods are Deep Learning Super Sampling (DLSS), FidelityFX Super Resolution (FSR), Xe Super Sampling (XeSS) and Temporal Super Resolution (TSR), which reduce computation costs by rendering the game in a lower resolution and later upsample it to the target resolution. 
+4 prominent methods are Deep Learning Super Sampling (DLSS), FidelityFX Super Resolution (FSR), Xe Super Sampling (XeSS) and Temporal Super Resolution (TSR), which reduce computation costs by rendering the game in a lower resolution and later upsample it to the target resolution. 
 DLSS and XeSS utilizes machine learning approaches, while FSR employs traditional methods. 
 The paper evaluates these upsampling technologies in terms of their performance and image quality, considering benchmarks and quality metrics such as PSNR, SSIM, and LPIPS. 
 DLSS proves to be the most effective upsampling technology, providing significant performance boosts and stable image quality. 
 Recent developments include DLSS 3 and FSR 3, which generate entire frames between real images, dramatically increasing frame rate but introducing input lag.
 As well as DLSS 3.5 - ray reconstruction, which further improves image quality for reflections, and AMD's Fluid Motion Frame (AFMF), which enables driver-level frame generation.
+
 \end{abstract}
 
 
@@ -279,7 +280,8 @@ The MOS score is inferior to the objective scores when it comes to comparability
         b) A high setting (good overall image quality with a scaling factor of 1.5).
         c) A medium setting (mixed image quality with a scaling factor of 1.7).
         d) A low setting (mediocre image quality with a scaling factor of 2.0).
-    The lower the scaling factor, the more computationally intensive upscaling becomes!}
+        e) A very low setting (worst image quality with a scaling factor of 4.0)
+    The higher the scaling factor, the worse the upscaling becomes!}
     \label{tab:qualityModes}
     \begin{tabular}{|c|c|c|c|}
     \hline
@@ -301,6 +303,9 @@ The MOS score is inferior to the objective scores when it comes to comparability
                 & (50\% screen resolution)      & 1280 x 720  & 2560 x 1440 \\
                 &                               & 1920 x 1080 & 3840 x 2160 \\
     \hline
+    Very Low    & 4.0x                          & 960 x 540   & 3840 x 2160 \\
+                & (25\% screen resolution)      & 1920 x 1080 & 7680 x 4320 (8k) \\
+    \hline
     \end{tabular}
 \end{table*}
 
@@ -309,7 +314,7 @@ We will now focus on the latest upsampling technologies used in modern games. Th
 In particular, we study FSR from AMD and DLSS from Nvidia, 
 Xe Super Sampling (XeSS) \cite{XeSS_intro} from Intel\footnote{\url{https://www.intel.com/content/www/us/en/homepage.html}} 
 and Temporal Super Resolution (TSR) \cite{TSR_intro} from Epic Games\footnote{\url{https://www.epicgames.com/site/en-US/home/}} (which is used exclusively in the Unreal Engine\footnote{\url{https://www.unrealengine.com/en-US/}}). \\
-All of these technologies typically use 4 different quality modes to upscale the LR image, as seen in table \ref{tab:qualityModes}. 
+All of these technologies typically use 5 different quality modes to upscale the LR image, as seen in table \ref{tab:qualityModes}. 
 For example, the very high quality mode uses a factor of 1.3 to scale the input resolution from 2954 x 1662 to 3840 x 2160 (here only 77\% of the output resolution is actually rendered by the game).
 Higher scaling factors result in worse image quality, but increase the performance rate of the respective upsampling algorithm.
 All quality modes target output resolutions of FHD (1080p), WQHD (1440p), and 4k (2160p).
@@ -348,12 +353,7 @@ It builds on FSR 1.0 and uses a temporal algorithm similar to TAA. The idea is t
 This history data can then be used to increase the accuracy of the interpolated pixels by calculating where each pixel in the previous frame moved to.
 In cases where the history data no longer correlates with the new input frame, temporal ghosting (a visual artifact best seen in fast-moving objects that trace themselves) occurs. 
 Since FSR 2.x already uses something similar to TAA, an anti-aliasing image as input is not strictly necessary (the MIP bias remains the same).
-Therefore, it is more computational demanding, which leads to a doubling of the performance overhead (4k with a RX 6800XT takes 1.1ms) \cite{fsr2.x}.\\
-
-!!!! ADD FSR 3!!!
-
-FSR 1.0 is integrated with Godot \cite{fsr1_godot} and Unity \cite{fsr1_unity}. While Unreal supports it through a plugin \cite{fsr1_unreal}.
-At the moment only Unreal supports FSR 2.x via a plugin \cite{fsr2.x_unreal}.
+Therefore, it is more computational demanding, which leads to a doubling of the performance overhead (4k with a RX 6800XT takes 1.1ms) \cite{fsr2.x}.
 
 \subsection{Deep Learning Super Sampling (DLSS)}
 
@@ -388,11 +388,6 @@ While the fake frames are displayed, the game does not respond to the player's i
 This reduces the overall responsiveness of the game.
 (Note: To solve this problem, Nvidia has introduced another technology called Refelex).
 
-!!!Add DLSS 3.5 !!!
-
-The high-definition rendering pipeline in Unity natively supports DLSS 2 \cite{dlss_unity}.
-Unreal supports both DLSS 2 and DLSS 3 as a plugin \cite{dlss_unreal}.
-
 \subsection{Xe Super Sampling (XeSS)}
 
 In September 2022, Intel introduced XeSS as its own deep learning upsampling technique.
@@ -403,7 +398,6 @@ XeSS uses a jitter offset to fight jagged edges, and takes a new subpixel positi
 Similar to FSR 2, XeSS performs its own anti-aliasing during upsampling.
 Intel recommends a MIP mapping bias based on an analog formula \ref{dlss_mip_bias} used in DLSS for XeSS.
 It is also recommended to use 1080p and above as input resolution for XeSS to work well.
-At the moment, only Unreal supports XeSS as a plugin \cite{xess_unreal}.
 
 \subsection{Temporal Super Resolution (TSR)}
 
@@ -419,7 +413,37 @@ Epic Games recommends using at least 1080p as the input resolution to get good i
 The screen resolution can be set up to 25\%, resulting in a maximum upscaling factor of 4.
 TSR cost can be roughly estimated at 1.5 ms per frame.
 MIP mapping bias is handled automatically by the engine.
-If another upsampling technique (FSR, DLSS, XeSS) is enabled within the engine, TSR simply gets replaced \cite{TSR_intro}.
+If another upsampling technique (FSR, DLSS, XeSS) is enabled within the engine, TSR simply gets replaced \cite{TSR_intro}.\\
+
+A full list of which game engines support which upsampling technique can be seen in \ref{tab:upscaling}.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    \multicolumn{1}{|c|}{} & \multicolumn{1}{c|}{\textbf{Godot}} & \multicolumn{1}{c|}{\textbf{Unreal}} & \multicolumn{1}{c|}{\textbf{Unity}} \\
+    \hline
+    FSR 2 & \color{green}\checkmark & \color{blue}\checkmark & \color{blue}\checkmark**\\
+    \hline
+    DLSS 2 & \color{red}x & \color{blue}\checkmark & \color{green}\checkmark\\
+    \hline
+    XeSS & \color{red}x & \color{blue}\checkmark & \color{red}x\\
+    \hline
+    TSR & \color{red}x & \color{green}\checkmark & \color{red}x \\
+    \hline
+    FSR 3 & \color{red}x & \color{blue}\checkmark* & \color{red}x\\
+    \hline
+    DLSS 3 & \color{red}x & \color{blue}\checkmark & \color{green}\checkmark*\\
+    \hline
+    \end{tabular}
+    \caption{Support of upsampling techniques in game engines. 
+    Green means native support inside the engine itself, while blue means it is supported through a plugin. 
+    (* announced or in development)
+    (** no official plugin)
+    \cite{fsr2.x_unreal} \cite{xess_unreal} \cite{dlss_unity} \cite{dlss_unreal} \cite{fsr2_godot} \cite{fsr2_unity}}
+    \label{tab:upscaling}
+  \end{table}
+
 
 \section{Evaluation}
 \label{Sec:Evaluation}
@@ -462,12 +486,20 @@ Regardless of the method used, upsampling technologies have proven to increase g
 The freed up power can be used for new features, e.g. more accurate ray tracing, help older GPUs/CPUs to be usable longer or just to save energy.
 At the moment, DLSS is proving to be the best upsampling technology in terms of performance and image quality.
 Since the other upsampling technologies are newer, we can expect this gap to close in the future.
-Amd has already announced that they are working on FSR 3, a competitor to DLSS 3 and frame generation \cite{fsr3}.
 Right now, all vendors of upsampling technologies recommend an input resolution of at least 1080p to achieve acceptable image quality.
 A rather high resolution for weak hardware, e.g. cell phones, to render.
-In the future, it is expected that acceptable image quality can also be achieved with lower resolutions.
-
-!!! FSR 3 is already here! FSR for ray tracing? AMD fluid motion frames == driver based frame generation might be a nice thing in the future, What will DLSS do next? focus more on ray tracing? Mobile might be a hard seller in next time!
+In the future, it is expected that acceptable image quality can also be achieved with lower resolutions.\\
+Regarding frame generation:
+AMD recently released their first version of frame generation called FSR 3, which builds upon AMDs Fluid Motion Frames (AMFM).
+Similiar to DLSS 3 AFMF creates an optical flow field to calculate the position of all objects in the scene.
+AFMF is a driver based solution and can be used solely for frame generation (while FSR 3 always works with information of FSR 2 and therefore needs to be implemented in some way in the renderer of the game).
+This allows AMFM to work in games which do not have any support of FSR and therefore can be used retrospective on older games.
+At the moment AFMF is in a beta state and limited to games running with DirectX 11 and 12.
+The generated frames lack important information about the game (like motion vectors) and therefore look in most cases very blurry \cite{afmf}.
+FSR 3 however generates fake frames with acceptable level of detail, but at the moment struggles with frame pacing \cite{fsr3}.
+Nvidia on the other hand recently revealed DLSS 3.5 - Ray Reconstruction, which enhances ray-traced images for intensive ray-tracing applications.
+DLSS 3.5 is trained on 5 times the data of that of DLSS 3 with the aim to reduce denoiser interference, resulting in better ray tracing effects, such as reflections \cite{dlss_3.5}. 
+Upsampling and generation techniques for images and frames is and remains a hot topic where we will see further improvements in detail quality in the future.
 
 % \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
                                   % on the last page of the document manually. It shortens
